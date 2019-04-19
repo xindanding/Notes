@@ -1,0 +1,267 @@
+1.@Configuration 代表这是一个java配置文件，Spring的容器会根据它来生成Ioc容器去装配Bean;@Bean代表将方法返回的POJO装配到Ioc容器中，而其属性name定义这个Bean的名称，如果没有配置它，则将方法名称作为Bean的名称保存到SpringIoc容器中。
+
+2.@Component表明这个类将被SpringIoc容器扫描装配，其中配置的名称作为Bean的名称，当然也可以不配置这个名称，那么Ioc容器就会把类名第一个字母作为小写，其他不变作为Bean名称放入到Ioc容器中,lazyinit属性决定是否延迟加载，默认false；注解@Value则是指定具体的值，使得SpringIoc给予对应属性注入对应的值。
+
+3.@Autowired规则：首先会根据类型（类名）找到对应的Bean,如果对应类型的Bean不是唯一的，那么它会根据其属性名称和Bean的名称进行匹配。如果匹配得上，就会使用该Bean;如果还无法匹配，就会抛异常。默认必须找到对应的Bean,如果允许为null,可以配置@Autowired的属性required为false
+
+4.@Primary告诉Spring Ioc容器，当发现有多个同样类型的Bean时，请优先使用该注解的Bean
+
+5.@Qualifier它的配置项value需要一个字符串去定义，将与@Autowired组合在一起，通过类型和名称一起找到Bean.
+@Autowired 以及与@Qualifier的组合可以放在构造函数的参数前，进行构造函数注入
+
+6.读取属性文件
+@Value("${}")
+@ConfigurationProperties  读取application.properties文件
+@PropertySource （value={"classpath: ..properties”}）读取其他配置文件
+
+7.条件装配Bean:@Conditional  与Condition接口搭配
+@Bean
+@Conditional(someClass.class)
+public Person createPerson(){
+.....}
+someClass必须实现Condition接口并重写matches方法，如果matches方法返回true,则装配bean
+
+8.@Profile 区分环境
+@Bean
+@profile("dev")
+public Person createPerson(){...}
+在Spring中存在两个参数可以提供给我们配置，以修改启动profile机制，spring.prifiles.active,spring.prifiles.default。在两个属性都没有配置的情况下，Spring不会启动profile机制，意味着@Profile标注的Bean将不会被Spring装配到Ioc容器中。Spring是先判断spring.profiles.active配置后，再去查找spring.profiles.default配置的。
+
+9.@ImportResource 引入xml配置bean
+@ImportResource(value={"classpath:..xml"})
+
+10.spring EL  用法 @Value(#{..})
+
+11.AOP切面编程
+@Aspect   声明切面
+@Pointcut
+@Before @After @Around @AfterReturning @AfterThrowing    切面的通知   参数可以为execution（）也可以是一个函数名（）（切点）
+
+12.@Transactional 可以放在接口上，也可放在类上；尽量放在实现类上，因为放在接口上将使得类基于接口的代理时才生效。Spring可以使用JDK动态代理，也可以使用CGLIB动态代理。如果使用接口，那么将不能切换为CGLIB动态代理，而只能使用JDK动态代理，并使用对应的接口去代理你的类
+
+13.springboot集成mybatis的xml方式
+1）将xml文件注入到配置文件application.properties
+mybatis.mapper-locations=classpath:com/.....xml
+2)将别名类注入到配置文件(类名上有@Alias注解，用于xml中resultType)
+mybatis.type-aliases-package=com....
+
+14.@Transactional自调用失效问题
+@Transactional(propagation=Propagation.REQUIRES_NEW)
+public init insertUser(User user){
+return userDao.insertUser(user);}
+@Transactional(propagation=Propagation.REQUIRED)
+public init insertUsers(List users){
+for(User user:users){
+insertUser(user);
+}
+自调用不会创建任何新的事务独立运行insertUser方法。根据Spring数据事务的约定，其实现原理是AOP,而AOP的原理是动态代理，在自调用过程中，是类自身的调用，而不是代理对象去调用，那么就不会产生AOP,这样Spring就不能把代码织入到约定的流程中。为了解决这个问题，可以用一个Service去调用另一个Service,这样就是代理对象的调用。
+
+15.@CachePut 表示将方法结果返回存放到缓存中
+@Cacheable表示先从缓存中通过定义的键查询，如果可以查询到数据，则返回，否则执行该方法，返回数据，并且将返回结果保存到缓存中。
+@CacheEvict 通过定义的键移除缓存，它有一个Boolean类型的配置项，befaoreInvocation,表示在方法之前或之后移除缓存，默认为false.
+@EnableCaching  开启缓存
+
+16.缓存自调用失效问题
+Spring的缓存机制也是基于SpringAop的原理，而在Spring中AOP是通过动态代理技术来实现的。
+
+17.Controller中加入@ResponseBody时，是没有经过试图解析器和视图渲染的。
+
+18.SpringMvc获取参数
+1）在无注解下获取参数。参数可以为空，唯一的要求是参数名称和HTTP请求的参数名称保持一致。
+void methodName(Long id)
+2）使用@RequestParam获取参数，默认参数不能为空；required为false时参数可以为空
+
+19.@RequestBody意味着前端提交的是json数据
+
+20.@DateTimeFormat针对日期进行格式化。@NumberFormat针对数字进行格式化。
+在springboot中可以不用使用@DateTimeFormat，而只在配置文件application.properties中加入
+spring.mvc.date-format=yyyy-MM-dd即可
+
+21.数据验证
+public void methodName(@valid @RequestBody Person person, Errors errors)
+
+22.数据模型
+Model、ModelMap、ModelAndView
+
+23.文件上传
+MultipartHttpServletRequest 接收
+方法：
+MultipartFile getFile("");
+application.properties中
+spring.servlet.multipart.enabled=true
+spring.servlet.multipart.file-size-threshold=0  //将文件写入磁盘的阈值
+spring.servlet.multipart.max-file-size=10MB  //单个文件最大大小
+spring.servlet.multipart.location=  //上传文件路径
+spring.servlet.multipart.max-request-size=  //所有文件最大大小
+spring.servlet.multipart.resolve-lazily=false
+
+24.拦截器HandlerInterceptor接口
+
+25.重定向
+1）通过字符串重定向 
+return  "redirect:/user/show?id="+user.getId();
+2)通过modelAndView重定向
+ModelAndView.setViewName("redirect:/user/show?id="+user.getId());
+通过重定向传对象，RedirectAttributes,一个ModelMap的扩展接口
+String showUser(User user)
+String redirect(args,  RedirectAttributes ra){
+ra.addFlashAttribute("user",user);
+return "redirect:/user/showUser";
+}
+
+26.操作会话对象
+@SessionAttribute应用于参数，作用是将HttpSession中的属性读出，赋值给controller中方法的参数；
+@SessionAttributes则只能用于类的注解，它会将相关数据模型的属性保存到Session中。
+
+27.给控制器controller增加通知。
+@ControllerAdvice：定义一个控制器的通知类，允许定义一些关于增强控制器的各类通知和限定增强哪些控制器功能等
+@InitBinder: 定义控制器参数绑定规则，如转换规则、格式化等，它会在参数转化之前执行
+@ExceptionHandler:定义控制器发生异常后的操作。发生异常后，可以跳转到指定的友好界面。
+@ModelAttribute:可以在控制器方法执行之前，对数据模型进行操作。
+
+@ControllerAdvice(basePackages={"com........test.*"}, annotations= Controller.class)
+public class MyControllerAdvice{
+//绑定格式化、参数转换规则和再等就爱验证器等
+@InitBinder
+public void initDataBinder(WebDataBinder binder){
+CustomDateEditor dateEditor = new CustomDateEditor(new SimpleDateFormat("yyyy-MM-dd"), false);
+binder.registerCcustomEditor(Date.class, dateEditor);
+}
+
+//在执行控制器之前执行，可以初始化数据模型
+@ModelAttribute
+public void projectModel(Model model){
+model.addAttribute("project_name", "chapter10");
+}
+//异常处理，使得被拦截的控制器方法发生异常时，都能用相同的视图响应
+@ExceptionHandler(value=Exception.class)
+public String exception(Model model, Exception ex){
+model.addAttribute("msg", ex.getMessage（）)；
+return "exception";
+}
+}
+
+28.@RequestHeader 从请求头获取参数
+
+29.采用了@RestController注解，对于方法返回的对象就会转变为JSON数据集。为了使得JSP视图也能够被渲染成功，原来通过直接返回字符串的方式就不能再用了；不过可以采用ModelAndView的返回，这样就能够让SpringMvc通过视图名称找到对应的视图，将数据模型进行渲染，展示JSP视图给用户。
+
+30.@RequestMapping、GetMapping等注解中还存在consumes和produces两个属性。其中，consumes代表的是限制该方法接收什么类型的请求体，produces代表的是限定返回的媒体类型，仅当Request请求头中的Accept类型中包含该指定类型才返回。
+
+31.ResponseEntity可以有效的封装错误消息和状态码
+@ResponseStatus 可以配置指定的响应码给客户端
+
+32.SpringSecurity
+1)
+Web项目中，使用@EnableWebSecurity注解启动SpringSecurity，该注解标注了@EnableGlobalAuthentication
+非Web项目中，使用@EnableGlobalAuthentication
+
+启动之后，会在日志中生成随机密码，默认用户名为user
+2)在application.properties中配置用户和密码
+spring.security.user.name=myuser
+spring.security.user.password=123
+有了安全配置的属性，即使没有加入@EnableWebSecurity,SpringBoot也会根据配置的项自动启动安全机制。
+3）SpringBoot 对SpringSecurity支持的配置项
+#Spring Security过滤器排序
+spring.security.filter.order=-100
+#安全过滤器责任链拦截的分发类型
+spring.security.filter.dispatcher-types=async,error,request
+#用户名，默认为user
+spring.security.user.name=user
+#用户密码
+spring.security.user.password=
+#用户角色
+Spring.security.user.roles=
+#Security oauth2 client
+spring.security.oauth2.client.provider.*=
+#oauth 客户端登记信息
+spring.security.oauth2.client.registration.*=
+3)使用WebSecurityConfigurerAdapter自定义
+4）自定义用户服务信息
+1.使用内存签名服务
+2.使用数据库定义用户认证服务
+3.使用自定义用户认证服务
+
+33.异步
+@EnableAsync 开启Spring异步
+@Async  标注方法，spring会从连接池中获取一个空闲线程执行该方法
+
+34.定时任务
+@EnableScheduling 开启注解驱动定时任务机制
+@Scheduled  标志方法 配置如何定时
+
+35.WebSocket
+@ServerEndpoint("/ws")表示让Spring创建WebSocket的服务端点，其中请求地址是“/ws"
+@OnOpen 标志客户端打开WebSocket服务端点调用方法
+@OnClose 标志客户端关闭WebSocket服务端点调用方法
+@OnMessage:标志客户端发送消息，WebSocket服务端点调用方法
+@OnError 标注客户端请求WebSocket服务端点发生异常调用方法
+
+36.Eureka 服务注册和治理
+@EnableEurekaServer  SpringBoot会启动Eureka模块
+application.properties
+#Spring项目名称
+spring.applicatioin.name=server
+#Eureka注册服务器名称
+eureka.instance.hostname=localhost
+#是否注册给服务中心
+eureka.client.register-with-eureka=false
+#是否检索服务
+eureka.client.fetch-registry=false
+#治理客户端服务域
+eureka.client.serviceUrl.defaultZone=http://localhost:7001/eureka/
+@EnableDiscoveryClient 将当前项目注册给服务中心
+
+37.Feign  声明式调用
+@EnableFeignClients  启动Feign客户端
+Feign提供了负载均衡算法，以rest风格向服务端发起请求
+
+38.@EnableCircuitBreaker  启动断路机制
+@HystrixCommand（fallbackMethod=""） 指定方法启用断路机制
+@EnableHystrixDashboard 启用Hystrix仪表盘
+需引入actuator
+
+39.@EnableZuulProxy 启动网关
+application.properties
+#spring应用名称
+spring.application.name=zuul
+#用户微服务映射规则
+#指定ANT风格的URL匹配
+zuul.routes.user-service.path=/u/**
+#指定映射的服务用户地址，这样zuul就会将请求转发到用户微服务上
+zuul.routes.user-service.url=http://localhost:8001/
+#注册给服务治理中心
+eureka.client.serviceUrl.defaultZone=http://localhost:7001/eureka,http://localhost:7002/eureka/
+
+40.@SpringCloudApplication 启用SpringBoot应用以及服务发现和断路器功能
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

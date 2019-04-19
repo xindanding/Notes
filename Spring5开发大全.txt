@@ -1,0 +1,93 @@
+1.spring自定义scope
+1)自定义一个类，实现Scope接口
+2）在xml配置文件中，在CustomScopeConfigure中配置自己的scope
+3）在其他bean的scope属性使用
+
+2.控制bean的生命周期
+1）InitializingBean和DisposableBean
+2)@postConstruct 和 @preDestory
+3)xml中指定 init-method 和 destroy-method
+执行顺序：
+PostConstruct、InitializingBean、ini-method、preDestory、Disposable、destroy-method
+
+3.如果父类的bean只作为子类的模板来用，同时指定了class属性，那么需要把abstract属性设为true,否则会被实例化
+
+4.导入属性文件
+1）PropertyPlaceholderConfigurer
+<bean class="......PropertyPlaceholderConfigurer">
+<property name="locations" value="classpath:...properties/>
+</bean>
+2)context命名空间
+<context:property-placeholder  locations="classpath:...properties/>
+<context:property-override locations="classpath:..properties"/>   覆盖
+
+5.包扫描
+1）@ComponentScan   @ComponentScan("packagePath")
+2)xml中  <context:component-scan base-package="packagePath">
+ <context:component-scan/> 包含了  <context:annotation-config/>
+
+6.使用过滤器来自定义扫描
+1）@ComponentScan(basePackages="",
+includeFilters= @Filter（），
+excludeFilters=@Filter())
+2) <context:component-scan  base-package="">
+<context:include-filter type="" expression=""/>
+<context:exclude-filter type="" expression=""/>
+</context:component-scan>
+7.@Import   @ImportResource
+@Import  用于导入类    @Import("A.class")
+@ImportResource 用于导入配置文件  @Import("classpath:....xml")
+
+8.@Profile   表示一个组件是否在当前环境下使用
+@Profile  相当于   @profiel("default")
+@Profile("name")
+<beans profile=""></beans> 
+
+激活profile         		1)	   			   annotationConfigApplicationContext.getEnviroment().setActiveProfile("name");     
+2)  -Dspring.active.profile = name
+
+9.@PropertySource("classpath:......properties")
+引入属性文件
+
+10.国际化
+spring 提供MessageSource的实现， ResourceBundleMessageSource 和  StaticMessgeSource
+
+11.代理机制
+如果需要强制使用CGLIB代理，需要将<aop:config>的proxy-target-class 设为true
+要在使用@Aspectj自动支持是强制使用CGLIB代理，需要将<aop:aspectj-autoproxy>的proxy-target-class设为true
+
+12.数据缓冲器 DataBuffer
+类似于ByteBuffer,   两个实现：1）NettyDataBuffer ,针对于Netty平台；
+2）DefaultDataBuffer,针对于非Netty平台
+
+13.声明式事务
+xml中
+<tx:annotation-driven transaction-manager=""/>
+
+14.已检查异常和未检查异常
+已检查异常： 编译不通过，需要捕获   如IO异常
+未检查异常： RuntimeException   不需要捕获    如NullPointerException
+
+15.事务的传播机制 propagation
+propagation_required:  一个事务管理的方法要执行时，已经处于一个事务中，那么该方法不开启新的事务；如果没处于事务中，那么新开启一个事务
+propagation_requires_new:  一个事务管理的方法要执行时，不管是不是处于一个事务，都新开启一个事务。子事务回滚不会导致父事务回滚，父事务回滚不会导致子事务回滚
+propagation_nested:子事务回滚或提交不会导致父事务回滚或提交，父事务回滚或提交会导致子事务回滚或提交
+
+16.调用存储过程SimpleJdbcCall,StoredProdure
+SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(dataSource).withProcedureName("");
+Map map = simpleJdbcCall.excute(SqlParemeterSource | Map);
+传入的key 和返回的key  和所调用的存储过程中参数名称相同
+
+17.xml与对象转换  Marshaller   Unmarshaller
+Marshaller
+marshal(Object object, Result result)
+Result的具体实现： DOMResult/SAXResult/StreamResult
+Unmarshaller
+unmarshal(Source source)
+Source的实现：DOMSource/SAXSource/StreamSource
+
+实体类：  @XmlRootElement(name =""),@XmlAttribute(name="")...
+实体类嵌套   @XmlElement
+
+18.REST客户端
+RestTemplate 类： 可以调用相关方法从别的服务器请求资源

@@ -1,0 +1,294 @@
+
+1.使用FileSystemXmlApplicationContext和使用ClassPathXmlApplicationContext的区别在于FileSystemXmlApplicationContext在指定的文件系统路径下查找文件；ClassPathXmlApplicationContext是在所有的类路径下查找文件。
+
+2.JavaConfig中引用xml配置中的bean
+@ImportResource("classpaht:..xml")
+   JavaConfig中一个配置类中的方法引用另一个配置类的Bean
+@Import(配置类.class)
+   xml配置引用JavaConfig中的bean
+xml中  <bean class="配置类"/>
+   xml配置引用另一个xml配置中的bean
+<import resource="**.xml"/>
+
+3.@ActiveProfiles() 指定运行测试时激活那个profile
+
+4.条件化bean   @Conditional、Condition接口组合
+
+5.因为Spring基于动态代理，所以Spring只支持方法连接点。这与一些其他的AOP框架是不同的，例如AspectJ和JBoss,除了方法切点，他们还提供了字段和构造器接入点。Spring缺少对字段连接点的支持，无法让我们创建细粒度的通知，例如拦截对象字段的修改。而且它不支持构造器连接点，无法在bean创建时应用通知
+
+6.AspectJ注解的自动代理
+1)配置类上@EnableAspectJAutoProxy
+2）xml中
+<aop:aspectj-autoproxy/>
+与@AspectJ、@Before、@After、@AfterReturning、@AfterThrowing、@Around组合
+
+7.配置DispatcherServlet
+1)在web.xml中配置dispatcherServlet
+2)实现AbstractAnnotationConfigDispatcherServletInitializer抽象类
+覆盖getServletMappings()、getRootConfigClasses()、getServletConfigClasses()方法。
+
+8.启用SpringMvc
+1)web.xml中<mvc:annotation-driven>
+2)使用java配置创建配置类
+@Configuration
+@EnableWebMvc
+
+
+9.调用Model的addAttribute方法并且不指定key的时候，那么key会根据值的对象类型推断确定。比如参数为List<User>,那么key会推断为userList. 可以使用Map代替Model
+
+10.spring3的校验注解
+@AssertFalse 所注解元素必须是Boolean类型，并且为false
+@AssertTrue
+@DecimalMax所注解元素必须是数字，并且小于等于给定数值
+@DecimalMin、@Digits、@Future 所注解元素必须是将来的日期
+@Max
+@Min
+@NotNull
+@Null
+@Pattern
+@Size  范围
+@Valid
+比如：
+public void (@Valid User user, Errors errors)
+Errors参数要紧跟随在带有@Valid注解的参数后面
+
+11.视图解析器
+FreeMarkerViewResolver
+将视图解析为FreeMarker模板
+InternalResourceViewResolver 将视图解析为Web应用的内部资源（一般为JSP)
+ResourceBundleViewResolver  将视图解析为资源bundle(一般为属性文件）
+VelocityViewResolver
+将视图解析为Velocity模板
+。。。。。。
+
+12.配置Thymeleaf视图解析器
+在Spring中使用Thymeleaf,需要配置三个启用Thymeleaf与Spring集成的bean
+1)ThymeleafViewResolver 将逻辑视图名称解析为Thymeleaf模板视图
+2）SpringTemplateEngine 处理模板并渲染结果
+3）TemplateResolver 加载Thymeleaf模板
+
+13.Thymeleaf模板中${}和*{}的区别：
+${}表达式是变量表达式。一般来说，它们回事ognl表达式。变量表达式是基于整个SpEL上下文计算的
+*{}表达式是选择表达式。选择表达式是基于选中的对象计算的。
+
+14.java的初始化器,实现Spring的WebApplicationInitializer接口
+覆盖onStartup（ServletContext servletContext）方法
+使用servletContext.addServlet("myservlet", MyServlet.class);
+servletContext.addFilter()
+servletContext.addListener()..
+.
+
+15。 (servle3.0容器)中可以直接实现AbstractAnnotationConfigDispatcherServletInitializer
+覆盖getSErvletFilters()方法
+return new Filter[]{new MyFilter()};注册Filter
+
+16.处理multipart形式的数据
+DiapatcherServlet没有实现解析multipart请求数据的功能，该任务委托给Spring中的MultipartResolver接口的实现
+Spring内置MultipartResolver的实现：
+CommonsMultipartResolver 使用Jakarta Commons FileUpload解析multipart请求
+StandardServletMultipartResolver 依赖于Servlet3.0对multipart请求的支持
+
+17.配置multipart解析器
+1）xml中配置
+<bean id  class../>
+2)java配置
+@Bean
+public MultipartResolver multipartResolver(){
+return new StandServletMultipartResolver();
+//return new CommonsMultipartResolver();
+}
+设置文件上传的大小和路径，StandardServletMultipartResolver没有构造器参数，也没有要设置的属性。可以覆盖AbstractAnnotationConfigDispatcherServletInitializer中的customizedRegistration(Dynamic registration);
+CommonsMultipartResolver不必覆盖，调用对应的构造函数就行
+
+18.处理Multipart请求
+1）@RequestPart(“”) byte[]  name
+2)@RequestParam("") MultipartFile file
+3)@RequestPart("") Part part
+
+19.处理异常
+@ControllerAdvice
+@InitBinder
+@ExceptionHanlder
+@ModelAttribute
+
+20.跨重定向请求传递数据
+1）使用URL模板以路径变量和/或查询参数的形式传递数据
+①return "redirect:/spitter/zhangsan";
+② public String login(User user, Model model){
+model.addAttribute("username", user.getUserName());
+model.addAttribute("id", user.getId());
+return "redirect:/spitter/{username}";
+会将model中的值传给占位符username
+id属性没有匹配重定向URL中的任何占位符，它会自动以查询参数的形式附加到重定向URL上。
+比如：url   /spitter/zhangsan?id=123
+2)使用flash属性（spring3.1）
+public String login(User user, RedirectAttribute model){
+model.addFlashAttribute("user",user);
+model.addAttribute("username", user.getName());
+return "redirect:/spitter/{username}";}
+RedirectAttributes是Model的子接口，在重定向前所有的flash属性都会复制到会话中。在重定向之后，存在会话中的flash属性会被取出，并转移到模型Model中，处理重定向的方法就能从模型中访问User对象了，就像获取其他的模型对象一样。
+public void spitter(Model model){
+model.getAttribute("user");}
+
+21.springSecurity (spring3.2)
+@EnableWebSecurity启用Web安全功能,如果使用SpringMvc开发，可以使用@EnableWebMvcSecurity,该注解配置了一个springMvc参数解析解析器，处理器方法能通过带有@AuthenticationPrincipal注解的参数获得认证用户的principal(或useername)。它同事还配置了一个bean,在使用spring表单绑定条钱库来定义表单时，这个bean会自动添加一个隐藏的跨站请求伪造token输入域。
+配置一个实现了WebSecurityConfigurer或者扩展WebSecurityConfigurerAdapter。实现三个configure()方法配置Web安全性。
+configure(WebSecurity) 通过重载，配置SpringSecurity的Filter链
+configure（HttpSecurity)通过重载，配置如何通过拦截器保护请求
+configure（AuthenticationManagerBuilder） 通过重载，配置user-detail服务
+
+22.SpringSecurity中用户存储的方式
+1）基于内存的用户存储
+在configure(AuthenticationManagerBuilder auth)中调用
+auth.inMemoryAuthentication().withUser("zhangsan").password("123").roles("USER"); 
+2) 基于数据库表进行认证
+在configure(AuthenticationMangerBuilder auth)中调用
+auth.jdbcAuthentication()
+.dataSource(dataSource)
+.usersByUsernameQuery().authoritiesByUsernameQuery();
+3)基于LDAP进行认证
+4）配置自定义的用户服务
+①用户对象User实现UserDetail接口
+②Service实现UserDetailService
+覆盖 loadUserByUsername方法，根据用户名查询用户信息和权限信息
+③在configurer（AuthenticationManagerBuilder auth）中调用
+auth.userDetailServie(new 自定义service)
+
+23.拦截请求
+在configure（HttpSecurity http）中，最为具体的请求路径放在前面，而最不具体的路径（如anyRequest（））放在最后面。如果不这样做的话，那不具体的路径配置将会覆盖掉更为具体的路径配置。
+http.authorizeRequest()
+.....   //针对http请求
+http.requireChannel()
+...//强制使用https
+
+24.启用remember-me功能
+在configure（HttpSecurity http）中调用
+http.rememberMe()
+.tokenValiditySeconds(time)
+.....
+登陆页面需要有名为remember-me的checkbox
+<label for="remember_me" class="inline"> Remember me</label>
+<input id="remember_me" name="remember-me" type=checkbox"/>
+
+25.Jdbc模板
+JdbcTemplate
+NamedParameterJdbcTemplate
+
+26.Hibernate
+Hibernate 3.2以上  4.0(不包含)以下
+LocalSessionFactoryBean
+AnnotationSessionFactoryBean
+Hibernate 4.0及以上
+LocalSessionFactoryBean  包含了Local 和 Annotation的功能
+
+27.JPA
+JPA的应用程序需要使用EntityManagerFactory的实现类来获取EntityManager实例。JPA定义了两种类型的实体管理器：
+应用程序管理类型，该EntityManagerFactory由PersistenceProvider的createEntityManagerFactory创建。
+容器管理类型：该EntityManagerFactory由PersistenceProvider的createContainerEntityManagerFactory()方法创建。
+
+spring集成JPA
+LocalEntityManagerFactoryBean生成应用程序管理类型的EntityManagerFactory
+LocalContailEntityManagerFactoryBean生成容器管理类型的EntityManagerFactory
+
+应用程序管理类型需要persistence.xml文件
+
+数据层中可以使用
+@PersistenceUnit
+EntityManagerFactory
+或@PersistenceContext
+EntityManager
+
+可能主要配置PersistenceAnnotationBeanPostProcessor实例
+
+28.Spring Data 集成 JPA
+1)xml配置中
+<jpa:repositories base-package=""/>
+2)java配置
+配置类加注解
+@EnableJpaRepositories(basePackages="")
+
+数据层方法
+1）数据层继承Repository的子类,调用继承来的方法即可
+2）使用@Query
+3)数据层继承Repositoryde子类和自定义接口
+比如 UserServieImpl extends JpaRepository, CustomClass{
+@PersistenceContext
+private EntityManager em;
+}
+
+29.Redis
+RedisTemplate
+StringRedisTemplate
+
+30.Spring对缓存的支持
+注解驱动的缓存
+xml声明的缓存
+
+开启缓存
+1）配置类上加@EnableCaching
+2）xml中<cache:annotation-driven/>
+
+声明CacheManager缓存管理器
+
+32.@Cacheable表明Spring在调用方法之前，首先应该在缓存中查找方法的返回值。如果这个值能够找到，就会返回缓存的值。否则的话，这个方法就会被调用，返回值会放到缓存中
+
+@CachePut Spring应该将方法的返回值放到缓存中。在方法的调用前不会检查缓存，方法始终都会被调用
+
+@CacheEvict 在缓存中清除一个或多个条目
+
+@Caching 分组注解，能够同时应用多个其他的缓存注解
+
+33.xml中声明缓存
+引入命名空间
+<aop:config>
+<aop:advisor advice-ref="cacheAdvice" pointcut="execution()"/></aop:config>
+<cache:advice id="cacheAdvice">
+<cache:caching>
+<cache:cacheable cache="" method=""/>
+<cache:cache-put cache="" method="" key="#result.id"/>
+<cache:cache-evict cache="" method=""/>
+</cache:caching>
+</cache:advice>
+<bean id="cacheManager" class="..."/>
+
+34.springSecurit对于方法的保护
+SpringSecurity自带的@Secured注解
+JSR-250的@RolesAllowed注解
+表达式驱动的注解，包括@PreAuthorize/@PostAuthorize/@PreFilter/@PostFilter
+
+1)添加配置类
+配置类添加@EnableGlobalMethodSecurity(securedEnable=true) 注解 或jsr250Enable=true
+2)扩展GlobalMehodSecurityConfiguration
+3)在方法上使用@secured（{“ROLE_ADMIN”}）或 @RolesAllowed（{“ROLE_ADMIN”}）
+
+SpringSecurity3.0的新注解可使用spEl表达式
+@preAuthorize 在方法调用之前，基于表达式的计算结果来限制对方法的访问
+@PostAuthorize 允许方法调用，但是如果表达式计算结果为false,将抛出一个安全性异常
+@PostFilter 允许方法调用，但必须按照雕大师来过滤方法的结果
+@PreFilter 允许方法调用，在进入方法之前过滤输入值
+
+35.ContentNegotiatingViewResolver会考虑到Accept头部信息并使用它所请求的媒体类型，但是它会首先查看URL的文件扩展名。如果URL在结尾处有文件扩展名的话，ContentNegotiatingViewResolver将会基于扩展名确定所需的类型。如果扩展名是“.json"的话，那么所需的内容类型必须是”application/json“.如果扩展名是”.xml“那么客户端请求的就是”application/xml“等。如果根据文件扩展名不能得到任何媒体类型的话，那就会考虑请求中的Accept头部信息。如果没有头部信息，并且扩展名也无法提供帮助的话，contentNegotiatingViewResolver将会使用”/“作为默认的内容类型，意味着客户端必须要就收服务器发送的任何形式的表述。
+
+36.ResponseEntity除了包含响应头信息、状态码以及负载以外，还包含@ResponseBody的语义，如果返回ResponseEntity的话，没有必要在方法上使用@ResponseBody注解了
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
