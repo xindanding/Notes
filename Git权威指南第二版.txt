@@ -1,0 +1,211 @@
+1.查看git的版本
+git --version
+git init  初始化版本库
+2.配置用户名和邮件地址
+git config --global user.name "ou"
+git config --global user.email "..."
+查看用户名和邮件地址
+git config user.name
+git config user.email
+删除用户名和邮件地址
+git config --unset --global user.name
+git config --unset --global user.email
+3.创建别名
+git config --global alias.st status
+git add fileName  将文件添加到本地库
+git commit -m ".."  将文件提交到本地库
+git commit --amend  --allow-empty
+--amend 对刚刚的提交进行修补，而不会产生新的提交，用于修改错误的提交
+--allow-empty  允许空白提交（没发生改动）
+4.推送
+git push origin master   推送到远程版本库的master分支
+
+5.查询状态
+git status -s      "-s" 可以查询精简格式的状态输出
+-b 显示当前的分支
+
+6.查看差异
+git diff    //工作区与暂存区进行比较
+git diff head    //工作区与本地版本库进行比较
+git  diff --cached或 --staged    //暂存区和本地版本库进行比较
+git diff B A  //比较Tag B和Tag A
+git diff A  //比较工作区和Tag A
+git diff --cached A   //比较暂存区和里程碑A
+
+6.
+git checkout <--fileName> 会用暂存区全部或者指定的文件替换工作区的文件 
+git checkout HEAD <file>  会用head指向的master分支中的全部或者部分文件替换暂存区以及工作区的文件
+
+git reset HEAD 暂存区的目录树会被重写，被master分支指向的目录树所替换，但工作区不受影响
+git clean -fd 清除当前工作区没有加入版本库的文件和目录
+git reset --soft HEAD  将回退一个commit操作，不进行暂存区和工作区的覆盖
+git reset --mixed HEAD  暂存区和本地版本库回退一个版本，但工作区不受影响,当 reset 操作没有参数时，默认为mixed
+git reset --hard  HEAD   暂存区和本地版本库以及工作区回退一个版本
+
+7.显示目录树
+git ls-tree head 显示本地版本库的目录树
+git ls-files <-s> 显示暂存区的目录树
+git ls-remote  显示远程仓库目录树
+
+8.git stash  保存当前工作区和暂存区工作进度
+git stash list 查看保存进度
+git stash pop [--index] [<stash>] 默认从最近保存的进度进行恢复
+<stash> 参数则从该stash进行恢复
+--index 除了恢复工作区外，还尝试恢复暂存区
+
+9.git branch  显示当前分支
+git rev-parse  master 显示master对应提交的id
+
+10.重置版本
+git log --oneline   查看提交id
+git reset --hard   提交id
+使用reflog挽救错误的重置
+git reflog show master    //show子命令可以显示文件的内容
+然后使用 git reset --hard master@{..}  或  提交ID
+
+11.返回到上一版本  commit 前
+git  reset  --soft head^
+工作区和暂存区保持commit前的状态,版本库回退一个commit操作
+git reset --soft head^^
+返回到最近两次提交之前
+
+12.删除文件
+git rm --cached <file> 会直接从暂存区删除文件，工作区不做改变
+git rm <file> 会删除暂存区和工作区的文件
+git add -u  可以将（被版本库追踪的）本地文件变更（修改、删除）全部记录到暂存区中
+
+13.文件改名
+git mv  welcome.txt readme  工作区和暂存区都改名
+
+14.
+git tag -m "set tag hello" hello 建立tag
+git describe  显示tag号
+git log --oneline --decorate
+--decorate 可以在提交id(版本号)的旁边显示该提交关联的引用（tag或分支）
+
+15.文件忽略
+创建一个名为 .gitignore文件，把需要忽略的文件写在其中（支持通配符）
+影响范围：当前目录以及子目录
+添加别忽略的文件  git add -f  filename
+忽略只对未跟踪的文件有效，对于已经加入版本库的文件无效
+忽略文件中的空行或以#开头的行会被忽略
+*.a  #忽略所有.a为扩展名的文件
+！lib.a  #但是lib.a文件或目录不要忽略，即使前面配置了对*.a的忽略
+/didi  #只忽略根目录下的文件，子目录的文件不忽略
+build/ #忽略所有build/目录下的文件
+doc/*.txt #忽略如doc/notes.txt，但是文件如 doc/server/arch.txt不被忽略
+
+16.文件归档
+git archive -o  name.zip head
+将部分src、doc目录归档
+git archive -o name.tar head src doc
+
+17.
+显示分支
+git rev-parse --symbolic --branches
+显示 tag
+git rev-parse --symbolic --tags
+版本列表
+git rev-list --oneline A
+
+18.文件追溯 git blame fileName
+会逐行显示文件，在每一行的行首显示此行最早在什么版本引入的，由谁引入
+
+19.反转提交
+git revert head  工作区、暂存区、版本库返回到提交前的状态
+
+20.克隆
+1)git clone <repository> <directory>
+将repository 指向的版本库克隆到directory目录，此操作上游版本库不能执行git push操作到下游
+2)git clone --bare <repository> <directory.git>  相比方式1）该克隆方式不包含工作区,此方式生成的裸版本库，可以在版本库中执行 git push操作到 裸版本库
+3)git clone --mirror <repository><directory.git> 相比方式2）该方式对上游版本库进行注册，可以通过git fetch命令河上游版本库进行持续同步
+git init 可以创建裸版本库
+
+21.查看上游版本库的注册信息
+git remote -v
+
+22.git checkout  branchName  切换分支
+git checkout -b branchName  创建分支并切换到该分支
+git checkout branch  --filename
+将branch 所指向的提交中的filename 替换暂存区和工作区中相应的文件。
+git checkout --. 或 git checkout . 将暂存区的所有文件直接覆盖本地文件。
+
+23.将所有reflog全部过期 （默认90以后过期）
+git reflog expire --expire=now --all
+
+24.git gc  清理两周以后过期的大文件
+git gc --prune=now  直接完成对未关联对象的清理
+
+24. git push  origin master  推送到远程的master分支下 
+git push -f 强制推送，如果不pull,会覆盖其他用户提交到远程版本库的代码
+
+25.合并
+git merger <commit>(commit 为提交id或对应的引用)  会将提交id对应的目录树和当前目录树进行合并
+
+26.里程碑 Tag
+git tag  显示当前版本库的里程碑列表
+git tag -n<num> 显示最多<num>行的里程碑的说明
+git tag -l   v2*  使用通配符对显示进行过滤  此处是v2*
+git log --decorate 可以看到提交对应的里程碑及其他引用
+git describe  <commit>显示对应提交id的里程碑
+git describe master^ --always  如果本身没有包含里程碑，可以通过--always参数显示精简提交id,否则出错
+
+27.创建里程碑
+git tag <tagname>[<commit>]创建轻量级里程碑，如果没有提交id <commit>,则基于头指针head创建里程碑
+git tag -a / -m<msg> <tagname>[<commit>] 创建带有说明的里程碑
+git tag -s  /-u<key-id>  <tagname> [<commit>]创建带GPG签名的里程碑
+
+28.删除里程碑
+git tag -d tagName
+删除里程碑之后会显示该里程碑对应的提交id,可根据该提交id进行重建
+git tag tagName commit
+创建的里程碑默认只在本地库可见，不会因为对分支执行推送而将里程碑也推送到远程版本库。
+共享里程碑：
+git push origin tagName
+如需将某些本地建立的所有里程碑推送到远程版本库，可以使用通配符 git push origin refs/tags/*
+1）里程碑共享，必须显示的推送
+2）执行获取或拉回操作，自动从远程版本库获取新里程碑，并在本地库中创建
+3）如果本地已有同名的里程碑，默认不会从上游同步里程碑，即使两者里程碑的指向是不同的
+git push origin :tagName 删除远程里程碑
+
+29.分支
+git branch 显示本地分支列表，当前分支用*号标识
+git branch  <branchName> 创建分支branchName
+git branch <branchName> <start-point>  基于<start-point>创建新的分支
+git branch -d branchName 删除分支时会检查所要删除分支是否已经合并到其他分支，否则拒绝删除
+git branch -D branchName 强制删除分支，即使该分支没有合并到任何一个分支中
+git branch -m <oldbranch> <newBranch>  重命名分支，如果版本库已经存在newbranch的分支，拒绝重命名
+git branch -M <oldbranch> <newBranch>强制重命名分支，即使版本库中已经存在newbranch分支
+git checkout -b <newbranch> 创建分支后立即切换到新分支上
+git rev-parse [branchname1]..
+显示提交ID
+git push origin  feature  可以将新建的feature分支推送到远程版本库
+git checkout -b hello-1.x origin/hello-1.x 基于远程分支创建本地分支
+git cherry-pick  <commit> 挑选分支到当前分支
+git rebase master  变基操作
+git push origin :branchName 删除远程分支
+
+30.远程版本库
+git ls-remote --heads  remoteUrl  查看远程版本库包含哪些分支
+git show-ref 查看全部的本地引用
+git branch -r  查看远程分支
+git checkout --track -b hello-1 hello-2 基于本地分支创建另外一个本地分支是也能使用分支间的跟踪功能
+
+31.名为origin的远程版本库是在版本库克隆是注册的，给本地注册新的远程版本库
+git remote add new-remote  remoteURIL
+git remote -v 显示已经注册的远程版本库
+git fetch 默认从origin的远程版本库中获取 
+git fetch new-remote 会从新的版本库中获取
+git remote set-url new-remote remoteUrl  更改远程版本库的地址
+git remote rename new-remote  
+user2  将远程版本库的名称new-remote改为user2
+git remote update 获取所有的远程版本库的更新
+git remote rm remoteName 删除远程版本库
+git fetch --no-tags  remoteUri 避免将远程版本库的里程碑引入本地库
+
+32.补丁文件
+git format-patch -s HEAD~3..HEAD 将最近三个提交转换为补丁文件 -s 会在导出的补丁文件中添加当前的用户名
+git send-email *.patch 将补丁以邮件的形式发送
+git am user1-mail-archive 将user1-mail-archive中的补丁全部应用到当前分支 am是apply email缩写
+mail  检查邮件 
+
