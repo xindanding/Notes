@@ -1,0 +1,1200 @@
+0.    varchar       存放固定长度的字符数据，最长2000个字符。
+varchar2    存放可变长字符数据，最大长度为4000字符。，最大長度為4000字符。
+varchar     是标准sql提供的数据类型。
+varchar2  是oracle提供的独特的数据类型。
+oracle保证在任何版本中该数据类型向上和向下兼容，但不保证varchar。
+总之，如果想新版本的数据库兼容就不要用varchar,如果想和其他数据库兼容就不要用varchar2。
+
+1.startup [nomount | mount | open | force][resetrict][pfile=filename]
+nomount: 表示启动实例不加载数据库				   startup nomount
+mount:表示启动实例，加载数据并保持数据库关闭状态	   startup mount
+open:表示启动实例，加载数据并打开数据库。默认选项      startup 
+force:表示终止实例并重启数据库
+resetrict:用于指定以受限制的会话方式启动数据库
+pfile:用于启东实例时所使用的文本参数文件。
+
+2.shutdown[normal | transactional | immediate | abort]
+normal:以正常方式关闭数据库 （阻止用户建立新的连接；等待正在连接的用户主动断开）
+transactional:表示在当前所有事务被提交完毕之后，关闭数据库（阻止建立新的连接，等待所有事务活动提交完成）
+immediate:在尽可能短的时间内关闭数据库（阻止建立新的连接，未完成的事务回退）
+abort:以终止方式关闭数据库（阻止建立连接，取消未完成事务，而不是回退，立即终止正在进行的sql）
+
+3.在读取数据时，oracle会首先从数据文件中读取数据，并将数据存储在内存的高速数据缓冲区中。如果用户要读取数据库中的某些数据，而请求的数据又不在高速数据缓冲区内，则需要充相应的数据文件中读取数据并存储在缓冲区中。当修改和插入数据时，oracle不会立即将数据写入到数据文件，而是把这些数据保存在缓冲区中，然后由oracle的后台进程DBWR决定如何将其写入到哪个数据文件。 减少磁盘IO操作，提高系统的响应性能
+
+4.在数据库运行期间，当用户执行COMMIT命令时，数据库首先将每笔操作的原始记录写入到日志文件中，写入日志文件成功后，才把新的记录传递给应用程序。所以，在日志文件上可以随时读取原始记录以恢复某些数据。
+
+5.oracle运行期间产生的日志信息，首先会被临时存放在系统全局区的“重做日志缓冲区”中，当发出Commit命令后（或日志缓冲区满1/3时），LGWR进程（日志写入进程）将日志信息从缓冲区中读取出来并写入到日志文件组中序列号较小的日志文件中。一个日志组写满之后接着写另一个日志组，当LGWR进程将所有能用的日志文件都使用过一遍之后，它将再次转向第一个日志组重新覆写。重新覆写会将之前的日志信息进行覆盖，所以在重新复写前将日志文件中的信息由归档进程写到归档日志文件中。归档日志文件会占用大量磁盘，默认不采用归档模式运行。
+
+6.SQLPlus命令：
+describe|desc  objectName 查询指定数据对象的组成结构
+help  index  显示sqlPlus命令清单
+#desc objectName  在输入命令时  随时查看数据对象的结构
+
+7.spool | spo 命令，把查询结果输出到指定文件中
+spo [file_name[.ext] [cre[ate] | rep[lace] | app[end]] | off|out ]
+file_name用于指定脱机文件的名称，默认的文件扩展名为lst,在该参数后可以跟一个关键字，该关键字有以下情况
+cre[ate]:表示创建一个新的脱机文件，默认状态
+rep[lace]:表示替代已经存在的脱机文件
+app[end]:表示把脱机内容附加到一个已经存在的脱机文件中
+off|out:表示关闭spool输出
+比如：
+sql> spool c:\emp.txt
+sql>select * from emp
+sql>spool off
+从spool命令开始到spool off之间的所有内容都会被写到emp.txt文件中，只有使用了spool off|out  文件的内容才会显示或覆盖
+
+8.start 和 @命令  可以用来执行一个sql脚本文件
+start | sta {url | file_name[.ext]} [arg...]
+@{url | file_name[.ext]} [arg...]
+
+url:表示要执行脚本的路径
+file_name:文件名
+arg:其他参数
+
+9.save 命令 将最近一条sql或pl/sql块保存到一个文件中
+save file_name
+比如：
+sql> select * from emp
+sql>save c:\emp.sql
+
+10.column 格式化列
+column | col [columnName|alias|options]
+不加参数显示所有列的当前定义属性
+比如：
+sql>col salary format $99.00
+sql>select salary from emp
+
+11.数据库的关键字、对象名和列名不区分大小写，但是字符值区分大小写
+where name = 'zhangsan'  与  ‘ZhangSan’ 结果不同
+
+12.在检索一个数据表时，要注意该表所属于的模式【用户】。如果在指定表所属的模式内部检索数据，则可以直接使用表名；如果不在指定表所属的模式内部检索数据，则不但要查看当前模式【用户】是否具有查询的权限，而且还要在表名前面加上其所属的模式【用户】名称。
+
+13.distinct  去重
+select distinct name from user
+
+14.A {operator} ANY(B)表示A与B中的任何一个元素进行operatro运算符比较，只要有一个比较值为true,就返回数据行
+     A{operator}  ALL(B) 表示A与B中的所有元素进行operator运算符比较，只有与所有元素的比较值为true,才返回数据行
+比如：
+select * from emp where sal <> all(300,500,1000);
+
+15.在进行where筛选的过程中，字符串和日期的值必须使用单引号标识，否则oracle会提示”标识符无效“
+
+16.判断 null  和空字符串的区别
+判断null   用 IS NULL
+判断空字符串   用  =
+
+17，order by 可以根据查询结果中的一个列或多个列对查询结果进行排序，并且第一个排序项是主要的排序依据，其它是次要的排序依据
+
+18.一旦在from子句中为表指定了别名，则必须在剩余的子句中都是用别名，而不允许再使用原来的表名，否则会报  标识符无效错误   from  emp e where emp.ename   (no)      from emp e where e.ename (yes)
+
+19.内连接  select columns_list from table_name [inner] join table_name2 on join_condition
+比如 select e.empno, e.name d.dname from emp e inner join dept d on e.deptno = d.deptno
+
+20.外连接
+left outer join | left join  左外连接
+right outer join | right join 右外连接
+full outer join | full join 完全外连接
+
+左外连接的查询结果不仅包含了满足条件的数据行，而且还包含了左表中不满足条件的数据行
+又外连接的查询结果不仅包含了满足条件的数据行，而且还包含了右表中不满足条件的数据行
+完全外连接会执行一个完整的左外连接和右外连接查询，然后将查询结果合并，并消除重复的记录行
+
+21.自然连接
+natural join 会将第一个表中的列和第二个表中具有相同名称的列进行自动连接。不需要指定进行连接的列
+
+22.交叉连接
+cross join  不需要任何的连接条件
+A cross join B   表示A的每一条记录都要和B中所有的记录连接
+
+23.常用函数
+ASCII(c) 返回一个字符的ASCII码，c代表一个字符
+CHR(i) 返回给定ASCII码的字符
+比如：
+sql> select chr(90) from dual;
+dual表是oracle 系统内部提供的一个用于实现临时数据计算的特殊表
+
+CONCAT(s1,s2) 将字符串上连接到字符串s1后面，如果s1为null,返回s2;如果s2为null,返回s1;如果s1,s2都为null，则返回null
+比如： select concat('hello','world') from dual;
+
+INITCAP(s)  将字符串s中的每个单词的首字母大写，其他字母小写。单词之间用空格、控制字符、标点符号区分
+
+INSTR(s1,s2[,i][,j]) 返回字符串s2在s1中第j次出现时的位置，搜索从字符串s1的第i个字符开始。当没有发现要查找的字符时，该函数返回值为0；如果i为负数，那么搜索从右往左执行，但函数的返回位置还是按从左往右计算。
+
+LENGTH(s) 返回字符串s的长度，如果s为null,则返回值为null
+
+LOWER(s) 返回字符串s的小写形式
+UPPER(s) 返回字符串的大写形式
+
+LTRIM(s1,s2)删除字符串s1左边的所有s2字符串
+RTRIM(s1,s2)删除字符串s1右边的所有s2字符串
+TRIM(s1,s2)删除字符串s1两边的所有s2字符串
+当不指定s2字符串时，默认为空格
+
+REPLACE(s1,s2[,s3]) 使用s3替换出现在s1中的所有s2字符串，并返回替换后的新字符串，s3默认为空字符串
+
+SUBSTR(s,i[,j]) 从字符串s的第i个位置开始截取长度为j的子字符串。如果省略j,则直接截取到尾部
+
+ADD_MONTHS(d,i) 返回日期d加上i个月时候的结果
+LAST_DAY(d) 返回日期包含d月份的最后一天
+MONTHS_BETWEEN（d1,d2）返回日期d1和d2的数目，若d1和d2的日期都相同，或者都是该月的最后一天，则返回一个整数，否则返回的结果包含一个小数
+SYSDATE() 返回系统当前日期
+日期类型的默认格式是“DD-MON-YY”
+
+TO_CHAER(x[,format]) 将表达式转为字符串，format为字符串格式
+TO_DATE(s[,format[lan]])  将字符串转为date类型，format表示字符串格式，lan表示语言
+TO_NUMBER(s[,format[lan]]) 返回字符串s代表的数字，返回值按照format格式进行显示，lan表示语言
+
+24.sql优化
+多表关联的查询效率要高于子查询
+
+25.子查询中，外查询语句检索一行，子查询语句需要检索一遍数据，然后判断外查询语句的条件是否满足。如果满足，则外查询将检索道德数据行添加到结果集，如果不满足，外查询语句继续检索下一行数据
+
+26.批量插入数据
+insert into table_name [(column_name1[,column_name2]...)] selectSubquery
+子语句中所选列的个数和类型要与语句中的column对应。insert into 子句指定的列名可以与select 子句指定的列名不同，但它们之间的类型必须是兼容的，即select语句返回的数据必须满足insert into表中列的约束
+
+27.使用delete语句删除数据时，oracle会产生回滚记录，所以这种操作可以使用rollback语句来撤销；
+truncate table  table_name 删除数据表中所有记录，不会产生回滚记录
+
+28.oracle不仅回滚未提交的事务吗，还允许回滚事务的一部分，这可以通过保存点来完成
+sql>insert into job value('办公人员')
+sql>savepoint sp;
+sql>insert into job value('销售人员')；
+sql>rollback to savepoint sp;
+
+29.PLSQL
+sql>set serveroutput on;     --在服务器端输出结果
+sql>declare
+Num_sal number;
+Var_ename varchar2(20);
+begin
+select ename,sal into Var_ename,Num_sal from emp
+where empno=1;
+dbms_output.put_line(Var_ename||'的工资是'||Num_sal);
+end;
+
+30.特殊的数据类型
+1）%type 可以声明一个与指定列名称相同的数据类型，紧跟在列名的后面
+比如： declare
+var_job emp.job%type
+如果emp.job的数据类型为varchar2(10),那么 var_job的数据类型也是varchar2(10);如果emp.job的数据类型发生变化，var_job也会随之发生变化
+  2)record 可以存储由多个列值组成的一行数据，声明记录类型变量之前，首先需要定义记录类型，使用type语句进行定义
+   	比如： declare
+type emp_type is record     //声明record类型
+（
+var_ename varchar2(20),		//定义字段、成员变量
+var_job varchar2(20)
+）；
+empinfo emp_type;       //定义变量
+begin
+select ename,job into empinfo from emp where empno=1;
+dbms_output.put_line('雇员'||empinfo.var_ename);
+end;
+ 3)%rowtype  存储从数据库表中检索到的一行数据
+比如： declare
+rowVar_emp emp%rowtype;
+begin
+select * into rowVar_emp from emp where empno=1;
+dbms_output.put_line();
+end;
+31.定义变量和常量
+定义变量并初始化：var_name varchar(50):='中国'
+定义常量并初始化 ： var_day constant integer:=365;
+
+32.选择语句
+1)if <condition> then
+statement
+end if;
+2)if <condition> then
+statement
+   else
+statement
+   end if;
+3)if <condition> then
+statement
+   elsif <condition> then
+statement
+..
+  else
+statement
+end if;
+
+33.case语句
+case <selector>
+when <expression> then statement;
+when <expression> then statement;
+....
+else  statement;   //else  可选
+end case;
+
+34.循环语句
+1）loop语句 首先执行一次循环体，然后在判断exit when ,如果为true则退出循环体
+loop
+statement
+exit when <condition>
+end loop;
+2）while语句  首先判断条件表达式，如果为true则执行循环体
+while <condition> loop
+statement
+end loop;
+3)for语句  存在reverse时，表示倒序    比如： for i  in reverse 1..100
+for  variable in [reverse] lower_limit .. upper_limit loop   
+statement
+end loop;
+
+35.PL/SQL游标  
+1）声明游标  在declare中声明
+cursor cur_name[(input_parameter1[,input_parameter2...])]
+[return ret_type]
+is  
+select_statement;
+cur_name  游标名称
+input_parameter1 是输入参数  格式   param_name [in] datatype [:= value]     比如   name in varchar:=zhangsan   不可指定数据长度
+ret_type 游标操作后的返回值类型
+select_statement  select 语句
+2）打开游标  在begin部分
+open  cur_name(para1[,para2])   如果声明部分有参数，此处不传参会只用默认值；此处传参，会使用传入的参数
+3）读取游标   在begin部分
+fetch cur_name into {variable}    variable通常是recode类型
+4）关闭游标
+close  cur_name
+案例：
+sql> declare
+/*声明游标*/
+cursor cur_emp(var_job in varchar2:='SALESMAN')    
+is select empno,ename,sal from emp where job=var_job;
+/*声明记录类型*/
+type record_emp is record(
+var_empno emp.empno%type,
+var_ename emp.ename%type,
+var_sal emp.sal%type
+)
+emp_row record_emp;    //声明一个record_emp类型变量
+begin
+open cur_emp('MANAFGER');    //打开游标    游标的指针指向第一行
+fetch cur_emp into record_emp;	//通过fetch将值保存到record_emp中，fetch之后，游标中的指针指向下一行,也可用  变量 no,name,sal替换，不过首先的声明
+while cur_emp%found loop
+dbms_output.put_line('....');
+fetch cur_emp into record_emp;    //通过fetch将值保存到record_emp，fetch之后，游标中的指针指向下一行
+end loop;
+close cur_emp;    //关闭游标
+end;
+
+36.游标属性
+%found  有值则为true
+%notfound  没有值则为true
+%rowcount   sql语句影响的数据行数
+%isopen 游标打开返回true,游标关闭返回false
+
+37.隐式游标  主要用于update/delete语句   也可用于select   使用隐式游标属性时，用属性前加‘sql’
+比如：
+begin
+update emp  set sal=sal*(1+0.2) where job='SALEMAN';
+if sql%notfound then
+statement
+else 
+statement
+end if;
+end;
+
+38.for循环与游标配合使用
+隐式游标：
+begin
+for  记录类型  in （select empno,ename,sal from emp where job='SALEMAN'）
+loop
+statement
+end loop
+end;
+显示游标：
+declare
+cursor cur_emp is 
+select * from emp
+where deptno = 30;
+begin
+for 记录类型 in cur_emp
+loop
+statement
+end loop;
+end;
+在使用游标（包括隐式和显示）的for循环中，可以声明游标，但不用打开游标，读取游标和关闭游标操作，这些有oracle内部自动完成
+
+39.异常处理
+1.预定义异常  已经定义在pl/sql库中
+too_many_rows、zero_divide..
+比如：
+declare
+var_empno number;
+var_ename varchar2(50);
+begin
+select empno,ename into var_empno,var_ename
+from emp
+where deptno=10;
+if sql%found then
+dbms_output.put_line("");
+end if;
+exception
+when too_many_rows then
+dbms_output.put_line("");
+when no_data_found  then
+dbms_output.put_line("");
+end;
+2.自定义异常
+1）错误编号异常
+declare
+primary_iterant exception;			//定义一个异常变量
+pragma exception_init(primary_iterant, -00001);	//关联错误号和异常变量名
+begin
+/*插入一条主键值重复的记录*/
+insert into dept values(10,'软件开发部','上海')；
+exception
+when primary_iterant then			//若Oracle系统捕获到的异常为-00001异常
+dbms_output.put_liine("");		//输出异常描述信息
+end;
+2)业务逻辑异常
+declare
+null_exception exception;		//声明一个异常变量
+dept_row dept%rowtype;
+begindept_row.deptno:=60;
+dept_row.dname:='公关部';
+insert into dept
+values(dept_row.deptno,dept_row.dname,dept_row.loc);	//插入一条记录
+if dept_row.loc is null then
+raise null_exception;			//通过raise引发异常，程序转入exception部分
+end if;
+exception
+when null_exception then		//当raise引发的异常是null_exception时
+dbms_output.put_line("");
+rollback;
+end;
+
+40.存储过程
+格式：
+create [or replace] procedure pro_name [(parameter1[,parameter2.....])]  is|as 
+begin 
+statement;
+[exception]
+statement
+end pro_name;
+pro_name:存储过程的名称
+parameter1:存储过程的参数  若是输入参数，需要在其后指定“in”关键字，若是输出参数，需要在其后指定“out”关键字
+若果是输入输出参数，需要在其后指定“in out”两个关键字
+内部变量要在 is|as之后定义，并用分号结束
+
+执行存储过程
+sql> execute pro_name
+pl/sql中执行存储过程
+begin
+pro_name
+end
+2)in 模式参数赋值
+create or replace procedure insert_dept(		//如果存在该存储过程，则覆盖
+var_ename in varchar2;
+var_loc in varchar2    //不能指定长度  指定默认值  追加 default ‘成都’
+)
+①按名称赋值
+exec pro_name(var_ename=>'采购部'，var_loc=>'成都')   //与顺序无关
+②按位置赋值
+exec pro_name('采购部'，‘成都’)
+
+pl/sql 调用存储过程
+begin
+pro_name('采购部'，‘成都’)；
+end;
+   3）out 模式参数
+create or replace procedure select_dept(
+var_dname out dept.dname%type,
+var_loc out dept.loc%type) 
+ ) is 
+begin
+ select name into var_dname, loc into var_loc .......
+pl/sql调用
+declare
+var_dname dept.dname%type;
+var_loc dept.loc%type;
+begin
+select_dept(var_dname,var_loc);
+end;
+exec调用
+sql>variable var_dname varchar2(50);
+sql>variable var_loc varchar2(50);
+sql>exec select_dept(var_dname,var_loc);
+sql>print var_dname var_loc;    或者  select :var_dname,:var_loc from dual
+4) in out 参数
+create or replace produce pro_square(
+num in out number
+) is
+i int:=2    //内部变量
+begin
+num := power(num,i);
+...
+pl/sql调用
+declare 
+var_number number;
+temp number;
+begin
+temp:=2;
+var_number:=temp;
+pro_square(var_number);
+.....
+
+41.函数
+格式; 类似与存储过程，但是函数一定要有返回值
+create [or replace] function fun_name[(parameter1[,parameter2]....)] return data_type is
+[inner_variable]
+begin
+statement
+[exception]
+statement
+end [fun_name];
+
+fun_name:函数名称
+parameter1：函数参数
+inner_variable：函数的内部变量
+data_type:数据类型  比如：number
+由于函数有返回值，所有函数的主体部分（begin部分）必须使用return语句和返回函数参数值，并且返回的参数值必须与函数声明的返回值类型data_type相同
+
+1）调用函数
+declare
+name number;
+begin
+name:=getName();
+end;
+2)删除函数
+sql>drop function functionName;
+
+42.触发器
+格式：
+create [or replace] trigger tri_name
+[before|after|instead of] tri_event
+on table_name|view_name|user_name|db_name
+[for each row][when tri_condition]
+begin
+statement
+end tri_name;
+before|after|instead of 表示触发时机，before表示在DML操作之前触发，after表示在DML操作之后触发，instead of 表示该触发器为替换触发器
+for each row 表示该触发器为行级触发器，当DML语句对每一行数据进行操作是都会引起该触发器的执行，如果为指定该条件，则表示语句触发器，无论数据操作影响多少行，触发器只执行一次
+tri_event:触发事件  insert/update/delete/create/drop/alter等
+tri_condition：触发条件表达式，只有当该表达式为true时，才会执行触发器；如果为false,就是遇到出发事件也不会执行触发器
+
+43.触发器的种类
+1）行级触发器：当DML语句对每一行数据进行操作时都会引起该触发器的执行
+2）语句触发器：无论数据操作影响多少行数据，触发器只执行一次
+3）替换触发器：定义在视图上，而不是定义在表上，用来替换所使用实际语句的触发器
+4）用户事件触发器：与DDL操作或用户登录、退出数据库等事件相关的触发器。如使用Alter改变表结构
+5）系统事件触发器：指在oracle数据库系统的实践中进行触发的触发器，如Oracle实例的启动和关闭
+
+44.语句触发器   不使用for each row
+比如：
+sql> create or replace trigger tri_dept
+before insert or update or delete
+on dept
+declare
+var_tag varchar2(50);
+begin
+if inserting then			//当触发事件是insert时      inserting 谓词
+var_tag:='插入'；
+elsif updating then			//当触发事件是update时
+var_tag:='修改'；
+elsif deleting then			//当触发事件是delete时
+var_tag:='删除'；
+end if;
+....
+end tri_dept;
+
+触发：当进行增删改时，自动触发
+
+45.行级触发器
+使用行级触发器生成主键值
+1）首先创建一个序列
+sql> create sequence seq_id;
+2)创建行级触发器
+sql> create or replace trigger tri_insert_good
+before on goods
+for each row   //表明是创建行级触发器
+begin
+select seq_id.nextval into :new.id from dual;
+end;
+
+列标识符：分为 原值标识符  和  新值标识符
+原值标识符  :old.column_name    用于update  delete
+新值标识符   ：new.column_name		用于insert update
+
+当插入一条记录时，哪怕传入了id值，也会使用序列号生成的id值，即传入的id值不会生效
+
+46.替换触发器    作用于视图
+视图本身不能进行  insert delete update
+创建视图：
+create view view_name as  
+[statement]
+删除视图
+drop  view view_name;
+可通过触发器实现
+create or replace trigger tri_insert_view
+instead of insert on view_name
+for each row    //表明是行级视图
+declare
+row_dept%rowtype
+begin
+insert into emp 
+...
+end tri_insert_view;
+此时可以对视图进行插入操作
+
+47.用户事件触发器   进行ddl 或 用户登录等操作触发
+create or replace or alter or drop
+on scott.schema
+begin 
+insert into ...
+end;
+
+48.程序包   包含“规范” 和“主体”
+1）“规范” 
+格式：
+create[ or replace] package pack_name is
+[declare_variable];		//规范内声明的变量
+[declare_type];			//规范内声明的类型
+[declare_cursor];		//规范内定义的游标
+[declare_function];		//规范内声明的存储过程，但仅仅定义参数和返回值，不包括函数体
+[declare_procedure];	//存储过程，仅定义参数，不包括存储过程主体
+end [pack_name];
+
+比如：
+create or replace package pack_emp is
+function fun_avg_sal(num_deptno number) return number;
+procedure pro_sal(var_job varchar2, num_proportion number);  
+end pack_emp;
+
+2)"主体"   与规范有点不能   package body
+create [or replace] package body pack_name is
+[inner_variable]
+[cursor_body]
+[function_title]
+{begin
+statement;
+[exception]
+statement;
+end [fun_name]}
+[procedure_title]
+{
+begin
+statement;
+[exception]
+statement;
+end[pro_name];
+}
+end [pack_name];
+比如：
+create or replace package body pack_emp is
+function fun_avg_sal(num_deptno number) return number is
+num_avg_sal number;
+begin
+....
+end fun_avg_sal;
+
+procedure pro_sal(var_job varchar2, num_proportion number) is
+begin
+..
+end pro_sal;
+end pack_emp;
+
+调用  pack_emp.fun_ave_sal(num_deptno);    //包名.函数名【存储过程名】 
+
+49.设置默认的临时表空间
+alter database default temprory tablespace temp_1
+设置默认的永久表空间
+alter database defalut tablespace tbs_example
+
+50.更改表空间的状态
+前提：该表空间必须为online状态
+   该表空间不包含任何回滚段
+   该表空间不能在归档模式下
+alter tablespace tablespaceName read only |   read write
+
+51.重命名表空间
+前提：只能是普通表空间
+状态不能使offline
+alter tablespace tablespaceName rename to newTableSpaceName
+
+52.删除表空间
+drop tablespace tbs_name [including contents][cascade constraints]
+including contents:表示删除表空间的同时要删除表空间的数据。如果不指定该参数，而表空间又存在数据，那么oracle会提示错误
+cascade constraint:表示删除表空间的同时要删除表空间的完整性约束，主键以及唯一索引等。
+
+53.向表空间加入数据文件
+alter tablespace users add datafile 'e:\...dbf' size 10m autoextend on next 5m maxsize unlimited;
+向表空间删除数据文件
+alter tablespace users drop datafile 'e:\..dbf'
+
+54.创建撤销表空间
+create undo tablespace tbs_name datafile 'd:\...dbf' size 100m;
+删除撤销表空间
+drop tablespace tbs_name;
+切换撤销表空间
+alter system set undo_tablespace = tbs_name;
+
+55.临时表空间    select distinct/   union 联合查询、minus计算、analyze分析等用到
+创建临时表空间组
+create temporary tp1 tempfile '...tpf' size 10m tablespace group g1;
+create temporary tp2 tempfile 'd:...tpf' size 10m tablespace group g1;
+
+56.转移临时表空间到另外一个组
+alter tablespace tp1 tablespace group g3;
+
+57.删除临时表空间
+drop tablespace tp1 including contents and datafiles;
+只有当所有临时表空间全部删除，才会自动删除临时表空间组
+
+58.创建表的副本
+create table table_name 
+as select * from old_table_name;
+
+59.增加表字段
+alter table table_name add(column_name  varchar2(20));
+
+60.删除表字段
+alter table table_name drop column column_name;    //删除1列
+alter table table_name drop (column_name1,column_name2,..);   //删除多列    没有column关键字
+
+61.修改表字段
+alter table modify column_name column_property
+修改表字段，只能包某种数据类型改变为兼容的数据类型，比如把长度从低向高改变，不能从高到低改变；
+如果表中没有数据，用户既可以吧长度从低到高改变，又能从高到低改变，还能从一种数据类型改为另一种数据类型
+
+62.重命名表
+alter table table_name rename to new_table_name;
+oracle可以自动更新数据字典中的外键、约束定义和表关系，但不能更新存储过程
+
+63.改变表的所属表空间
+alter table table_name  move tablespace new_tablespace_name;
+
+64.改变表空间存储参数 pctfree/pctused
+alter table table_name pctfree 25 pctused 45;
+
+65.删除表
+drop table table_name [cascade constraints];
+当该表存在约束时，必须加cascade constraints;删除表其实没有被彻底删除，只是把他放到回收站中，查看该表是否在回收站
+select object_name , original_name from recyclebiin where original_name ='table_name';
+如果想撤销，可以使用flushback技术
+flushback table table_name to before drop;
+如果想撤掉删除，可以在drop中只用purge选项
+
+66.修改表的状态
+alter table table_name read only   |  read write
+
+67.表增加约束
+1）创建表时
+create table table_name(
+bookno number(4),
+name varchar2(20) not null,
+constraint book_pk primary key(bookno)
+)
+2)alter table table_name modify column_name not null;
+alter table table_name add constraint book_pk primary key(bookno);
+
+68.删除约束
+alter table table_name drop constraint book_pk;
+
+68.增加外键约束
+alter table table_name add constraint departid_fk foreign key(department_id)  references departments(department_id);  //如果外键表的外键列与被引用表的被引用列相同，references后的名称可以省略；
+
+69.禁用约束
+alter table table_name disable constraint  c_name;
+
+70.激活约束
+alter table table_name enable [novalidate|validate] constraint c_name;
+novalidate: 该关键字表示在激活约束时，不对表中已经存在的数据做验证。
+
+71.建立索引的注意事项：
+1）索引应该建立在where子句频繁引用表列上
+2）经常需要基于某列或几列执行排序操作，建索引可以加快排序速度
+3）限制表的索引个数。索引主要用于加快查询速度，但会降低DML操作的速度。索引越多，DML操作速度越慢，因为进行DML操作的时候会更新索引
+4）指定索引块空间的使用参数。基于表建立索引时，Oracle会将相应表列数据添加到索引块。为索引块添加数据时，Oracle会按照PCTFREE参数在索引块上预留部分空间，该预留空间是为将来的insert操作准备的。如果将来在表上执行大量的insert操作，那么应该在建立索引时设置较大的pctfree.
+5)将表和索引部署在相同的表空间，可以简化表空间的管理；将表和索引部署到不同的表空间，可以提高访问性能。
+6）当在大表上建立索引时，使用nologging选项可以最小化重做记录。使用nologging选项可以节省重做日志空间、降低索引建立时间、提高索引并行建立的性能
+7）不要在小表上建立索引
+8）为了提高多表连接的性能，应该在连接列上建立索引
+
+72.建立索引
+建立B树索引：
+create index indexName on tableName(colName) pctfree 25 tablespace users;
+建立位图索引：
+create bitmap index indexName on tableName(colName) tablespace users;
+建立反向键索引：
+create index indexName on tableName(colName) reverse  tablespace users;
+如果已经存在B数索引
+alter index indexName rebuild reverse;
+基于函数的索引
+create index indexName on tableName(lower(colName));
+
+73.修改索引
+如果索引碎片较多，可以合并索引
+alter index indexName coalesce deallocate unused;
+重建索引
+alter index indexName rebuild;
+重建并指定表空间
+alter index indexnName rebuild tablespace  spaceName;
+
+74.删除索引
+drop index indexName;
+
+75.显示索引信息
+1.显示表的所有索引
+通过查询数据字典视图DBA_INDEXES,可以显示数据库的所有索引
+通过查询数据字典视图ALL_INDEXES,可以显示当前用户可以访问的索引
+通过查询数据字典视图USER_INDEXES,可以显示当前用户的索引信息。
+2.显示索引列
+通过查询数据字典视图DBA_IND_COLUMNS,可以显示所有索引的表列信息；
+通过查询数据字典视图ALL_IND_COLUMNS,可以查询当前用户可以访问的索引
+通过查询数据字典视图USER_IND_COLUMNS,可以显示当前用户的表列信息
+3.显示索引段位置及其大小
+建立索引时，Oracle会为相应的索引分配相应的索引段，索引数据被放在索引段中，并且段名和索引名完全相同
+通过查询数据字典视图DBA_IND_EXPRESSIONS,可以显示数据库所有函数索引对应的函数或表达式
+通过查询数据字典视图USER_IND_EXPRESSIONS,可以显示当前用户函数索引所对应的函数或表达式
+
+76.视图
+视图是一个虚拟表，它由存储的查询构成，可以将它的输出看成一张表。但是，视图并不在数据库中存储数据值，其数据值来自定义视图的查询语句所引用的表，数据库只在数据字典中存储视图的定义信息。此外，可以对简单视图（单表）进行DML操作。
+创建视图语法：
+create [or replace] view  view_name [alias[,alias]..]
+as <subQuery>
+[with check option] [constraint constraint_name] [with read only]
+
+alias:  用于指定视图的别名
+subQuery: 用于指定视图对应的子查询语句
+with check option : 用于指定视图上定义的check约束
+with read only: 该子句用于定义只读视图
+1）创建视图
+create or replace view emp_view as 
+select empno,ename,job 
+from emp
+where deptno = 20;
+因为建立视图没有提供列别名，所以视图的列名分别为empno, ename, job
+with read only;   //建立只读视图
+2）查看视图定义
+通过查询数据字典视图USER_VIEWS获取视图的定义信息
+desc user_views;
+3)修改视图
+create or replace view view_name as 
+....
+replace  至关重要
+ 4）重新编译视图
+视图被创建后，如果用户修改了视图所依赖的基本表定义，则该视图会被标记为无效状态。当用户访问视图时，oracle会自动重新编译视图。也可以用alter view 语句手动编译视图
+alter view view_name compile;
+5)删除视图
+drop view view_name;
+
+77.同义词对象
+同义词是表、索引、视图等模式对象的一个别名。通过模式对象创建同义词，可以隐藏对象实际名称和所有者信息，或者隐藏分布式数据库中远程对象的设置信息。与视图、序列一样，同义词只在oracle数据库的数据字典中保存其定义信息，因此同义词不占用任何实际的存储空间。
+1）种类
+oracle中的同义词分为两种类型：公有同义词和私有同义词。公有同义词被一个特殊的用户组public所有拥有，数据库中的所有用户都可以使用公有同义词；而私有同义词只被创建它的用户所拥有，只能由该用户以及被授权的其他用户使用
+2）创建公有同义词
+create public synonym synonym_name for  scott.tableName;
+3）创建私有同义词					scott为模式名		
+create synonym synonym_name for scott.tableName;
+4）删除同义词
+drop [public] synonym synonym_name;
+78.序列对象
+create sequence seq_name
+[start with n]
+[increment by n]
+[minvalue n | nomainvalue]
+[maxvalue n| nomaxvalue]
+[cache n | nocycle]
+[cycle | nocycle]
+[order | noorder]; 
+
+seq_name: 创建序列名
+increment: 表示序列的增量。一个正数将生成一个递增的序列，一个负数将生成一个递减的序列
+minvalue: 决定序列生成的最小值
+maxvalue:决定序列生成的最大值
+start: 指定序列的开始位置。默认情况下，递增序列的起始值是minvalue,递减序列的起始值是maxvalue.
+cache: 决定是否产生序列号预分配，并存储在内存中
+cycle: 当序列达到最大或者最小值时，可以复位并继续下去。如果达到了极限，生成的下一个数据将分别是最小值或者最大值。如果使用nocycle，那么在序列达到其最大值或最小值之后，如果视图在获取下一个值将返回一个错误
+order:  可以保证生成的序列是按照顺序产生的。例如，order可以保证第一个请求得到的数为1，第二个为2,以此类推。而noorder只保证序列的唯一性，不保证产生序列的顺序
+
+1）创建序列
+create sequence empno_seq
+maxvalue 99999
+start with 9000
+increment by 100
+cache 50;
+
+insert into emp(emp,ename,deptno) values (empno_seq.nextval,'董藩'，20)；
+项目中通常使用行级触发器
+2）修改序列
+除了 start with 不能修改，其他都能修改
+alter sequence seq_name 
+maxvalue 100000
+increment by 200
+cache 100;
+3)删除序列
+drop sequence sequence_name;
+
+79.表分区
+1）范围分区
+create table table_name(
+id integer primary key,
+retail_date date,
+name varchar2(100)
+)
+partition by range(retail_date)(
+partition part_01 values less than(to_date('2011-04-01','yyyy-mm-dd')) tablespace tbs_1,
+partition part_02 values less than (to_date('2011-0701','yyyy-mm-dd')) tablespace tbs_2
+)
+查询
+select * from table_name partition(part_01);
+
+2)散列分区
+create table table_name(
+id integer primary key,
+retail_date date,
+name varchar2(100)
+)
+parttion by hash(id)(
+partition part_01 tablespace tbs_1,
+partition part_02 tablespace tbs_2
+);
+Oracle 自动通过计算id的hash值，让后系统按照均匀分布的原则自动分配的
+create table table_name(
+id integer primary key,
+retail_date date,
+name varchar2(100)
+)
+storage(initial 2048k)   //定义表分区的初始化空间为2048k
+partition by hash(id)
+partition2 		//创建两个分区，分区名有系统自动给出
+store in(tbs1, tbs2);  
+3)列表分区  针对枚举值
+create table table_name(
+id integer primary key,
+name varchar2(100),
+province varchar2(50)
+)
+partition by list(province)(
+partition part_01 values('山东省')，
+partition part_02 values('湖南省')
+
+);
+
+80.表分区策略
+1)添加表分区
+alter table table_name add partition part_03 values('重庆市')
+storage(initial 10k next 20k) tablespace tbs_3
+nologging;
+2)合并散列分区
+alter table table_name coalesce partition;
+3)删除分区
+alter table table_name drop partition part_03;   //如果有索引，必须重建索引
+
+81.索引分区
+1）本地索引分区
+1.创建表空间
+create tablespace tbs_1 datafile 'D:\ts1.dbf' size 10m extent managgement local autoallocate;
+create tablespace tbs_2 datafile 'D:\ts2.dbf' size 10m extent managgement local autoallocate；
+2.创建表分区
+create table table_name(
+id number primary key,
+name varchar2(10),
+grage number
+)
+partition by range(grade)(
+partition part_01 values less than(60) tablespace tbs_1,
+partition part_02 values less than(80) tablespace tbs_2
+);
+3.创建本地索引分区
+create index index_name on table_name(grade)
+local(
+partition p1 tablespace tbs_1,
+partition p2 tablespace tbs_2
+);
+4.通过DBA_IND_PARTITIONS视图查询索引分区信息
+2)全局索引
+全局索引就是没有与分区表相同分区键的分区索引。当分区中出现许多事务并且要保证所有分区中的数据记录唯一时，采用全局所有分区
+create index index_name on table_name(saleprice)
+global partition by range(saleprice)(
+partition part_1 values less than (30),
+partition part_2 values less than (50)
+);
+
+create index index_name on table_name(id)
+global partition by hash(id);
+
+82.管理索引分区
+1）删除索引分区
+alter index index_name drop partition p2;
+在删除若干个索引分区之后，如果只剩余一个索引分区，则需要对这个索引分区进行重建
+alter index index_name rebuild partition p3;
+2)重命名索引分区
+alter index index_name
+rename partition part_old to partition part_new;
+
+83.创建用户
+语法：
+create user user_name identified by password
+[or identified exeternally]	 				//表示用户名在操作系统下验证，要求该用户名必须与操作系统中定义的用户名相同
+[or identified globally as 'CN=user']			//表示用户名由Oracle安全域中心服务其验证，CN名字表示用户的外部名
+[default tablespace tablespace_default]		
+[temporary tablespace tablespace_temp]
+[quota[integer k[m]] [unlimited]] on tablespace tablespace_specify  //用户在指定表空间允许占用的最大空间
+[profiles profile_name]		//资源文件的名称
+[account lock or account unlock]		//用户是否被锁，默认情况下不加锁
+
+比如：
+create user mr identified by mrs
+default tablespace users
+ temporary tablespace temp
+quota unlimited on users;
+
+84.修改用户
+alter user username quota 20m on users;
+alter user usertname identified by userpassword;
+alter user username account unlock;
+
+85.删除用户 
+drop user  username;
+
+86.权限简介
+根据系统管理方式的不同，Oracle将权限分为两大类：系统权限和对象权限
+系统权限：是在系统级对数据库进行存取和使用的机制，比如用户能否连接到数据库系统（SESSION权限）
+对象权限：指某一个用户对其他用户的表、视图、序列、存储过程、函数、包等的操作权限
+
+87.授权
+grant sys_privi|role to user|role|public  [with admin option]
+public:保留字，代表oracle系统的所有用户
+with admin option : 表示被授权者可以再将权限授予另外的用户
+
+grant connect,resource to user1;
+
+88.回收系统权限
+revoke sys_privi|role from user|role|public
+
+revoke resouce from user1;
+
+89.对象权限
+grant obj_privi|all column on schema.object to user|role|public [with grant option] [with hierarchy option]
+obj_privi:表示对象的权限，可以使select / update/alter
+with hierarchy option: 在对象的子对象上授予权限
+
+grant select,insert,delete,update on scott.emp to user1;
+
+90.回收对象权限
+revoke delete on scott.emp from user1;
+如果数据库管理员用grant命令给用户A授予权限时有with admin option,该用户A有权将权限再次授予给其他用户。在这种情况下，如果数据库管理员用revoke 回收A的对象权限，用户B的对象权限也会被回收。这与系统权限的回收不同。
+
+91.角色：权限的集合
+预定义角色：connect ,resource,dba,exp_full_database,imp_full_database
+1）创建角色
+create role role_name [not identified|identified by [password]|[exeternally|[goabally]]]
+identified by exeternally:表示角色名在操作系统下验证
+identified globally:表示用户是oracle安全域中心服务器来验证，此角色有全局用户来使用
+
+create role designer identified by 123456;
+2)角色授权
+grant create view,create table to designer;
+3)将角色授予用户
+grant designer to user1;
+
+92.角色管理
+1）修改角色密码
+1.取消角色密码
+alter role designer not identified;
+2.修改角色密码
+alter role designer identified by 654321;
+2)设置当前用户要生效的角色
+最大生效角色数由参数max_enabled_roles设定。
+sql>create role queryer;
+sql>set role queryer;
+
+sql>set role designer identified by 1234565;
+如果要设置带有密码的角色生效，则必须在set role语句后面使用 identified by 关键词指定角色的密码
+3）删除角色
+drop role role_name;
+
+93.常规的sql语句优化
+1）建议不用* 代替所有列名
+因为oracle将*解析为表中的各个列名会消耗系统时间
+2）当希望清除表中所有记录时，用truncate 代替 delete
+使用delete删除数据时，oracle会使用撤销表空间来存放删除的信息。
+3）减少表的查询次数
+sql>select empno,ename from emp
+where deptno in (select deptno from dept where loc='beijing')
+or deptno in(select deptno from dept where loc='shanghai');
+优化
+sql> select empno,ename from emp
+where deptno in(select deptno from dept where loc='beijing' or loc='shanghai');
+
+94.数据导出工具 expdp
+expdp是服务器端工具，只能在服务器端使用，客户端可使用exp工具
+expdp工具只能将导出的转储文件放在directory对象对应的目录，不能直接指定磁盘目录。因此使用expdp工具，首先建立directory对象，并且需要为数据库用户授予使用directory对象的权限
+1）创建directory对象
+create directory dump_dir as 'd:\dump';
+2)授权
+grant read,write on directory dump_dir to scott;
+3)导出表
+导出表是指将一个或多个表的结构及其数据存储到转储文件中。普通用户只能导出自身模式中的表。导出其他模式中的表，必须具有exp_full_database角色或dba角色权限。在导出表时，每次只能导出一个模式中的表
+expdp scott/123456 directory=dump_dir  dumpfile=tab.dmp tables=emp,dept  //导出scott模式中的emp和dept表
+4）导出模式
+导出模式是指将一个或多个模式中的所有对象及数据转储到转储文件中，导出模式要求用户具有exp_full_database或dba角色权限
+expdp system/123456 directory=dump_dir dumpfile=schema.dmp schemas=scott,hr
+//导出scott模式和hr模式中的所有对象和数据
+5）导出表空间
+导出表空间是指将一个或多个表空间中的所有对象及数据转储到转储文件中。导出表空间必须有dba角色或exp_full—database角色
+expdp system/123456 directory=dump_dir dumpfile=tablespace.dmp tablespaces=tbsp_1
+//导出表空间tbsp_1
+6)导出全数据库
+导出全数据库是指将数据库中的所有对象及数据存储到转储文件中，导出数据库要求用户必须有dba角色或exp_full_database角色。注意：导出数据库时，不会导出sys,ordsys,ordplugins,ctxsys,mdsys,lbacsys以及xdb等模式中的对象
+expdp system/123456 directory=dump_dir dumpfile=fulldatabase.dmp full=y
+7)expdp命令参数
+   1.content 用户指定要导出的内容，默认值为all
+content={all | data_only | metadata_only}
+all: 将导出对象定义及其所有数据
+data_only:只导出对象数据
+metadata_only: 只导出对象定义
+expdp scott/123456 directory=dump_dir dumpfile=content.dmp content=data_only
+    2.query  用于指定过滤导出数据的where条件
+query=[schema.][table_name:] query_clause
+schema: 用于指定模式名
+table_name: 用于指定表名
+query_clause:用于指定条件限制子句
+query不能与connect=metadata_only,extimate_only,transprot_tablespaces等参数同时使用
+expdp scott/123456 directory=dump_dir dumpfile=query.dmp tables=dept query='where deptno=10'
+//导出dept表中编号为10的数据
+    3.directory 指定转储文件和日志文件所在的目录
+    4.dumpfile  指定转储文件的名称
+    5.full 指定数据库模式导出 默认为n
+full={y | n}
+当设置为y时，表示执行数据库导出
+    6.logfile  指定导出日志文件的名称，默认名称  export.log
+    7. status 导出作业进程的详细状态  默认为0
+status=integer
+    8.tables   用于指定表模式导出
+tables=[schema_name.]table_name[:partition_name][...]
+schema_name:用于指定模式名
+table_name:用于指定要导出的表名
+partition_name:用于指定要导出的分区名
+    9.tablespaces   指定表空间列表
+
+95.数据导入工具 impdp   数据泵
+服务器端的工具，只能在oracle服务端使用，客户端可使用imp
+1）导入表
+impdp system/123456 directory=dump_dir dumpfile=tab.dmp  tables=scott.dept,scott.emp remap_schema=scott:system
+//将scott模式下的dept,emp表导入到system模式中，将表导入到其他模式中，必须指定remap_schema参数
+2）导入模式
+impdp system/123456 directory=dump_dir dumpfile=schema.dmp  schemas=scott remap_schema=scott:system;
+//将scott模式中的所有对象导入到system模式中
+3）导入表空间
+impdp system/123456 directory=dump_dir dumpfile=tablespace.dmp tablespaces=tbsp_1
+//将tbsp_1表空间中的所有对象导入到当前数据库中
+4）导入全数据库
+impdp system/123456 directory=dump_dir dumpfie=fulldatabase.dmp full=y
+从fulldatabase.dmp文件中导入全数据库
+5）参数
+remap_schema 用于将源模式中的对象转载到目标模式中。
+remap_schema=source_schema:target_schema
+source_schema:源模式
+target_schema:目标模式
+remap_tablespace
+remap_tablespace=source_tablespace:target_tablespace
+sqlfile  可以从dmp文件中提取对象的ddl语句，该参数用于将导入的ddl操作写入到sql脚本中
+sqlfile=[directory_object:]file_name
+file_name表示包含ddl语句的文件。实际上impdp只是从dmp文件中提取对象的ddl语句，这样impdp并不把数据导入数据库中，只是创建ddl语句文件
+impdp scott/123456 directory=dump_dir dumpfile=sqlfile.dmp sqlfile=test.sql
+table_exists_action 用于指定当前表已经存在时导入作业要执行的操作，默认skip
+table_exists_action={skip | append | truncate | replace}
+skip:导入作业会跳过已存在表，处理下一个对象
+append:会追加数据
+truncate:导入作业会截断表，然后为其追加新数据
+replace:导入作业会删除已存在的表，然后重建表追加数据
+transprort_datafiles  表示移动表空间时要被导入到目标数据库的数据文件。
+transport_datafiles=datafile_name
+datafile_name用于指定被复制到·目标数据库的数据文件
+impdp system/123456 directory dump dumpfile=tran_datafiles.dmp transport_datafile='d:\test.dbf'
+//向当前数据库导入test.dbf数据文件
+
+96.闪回表
+flashback table [schema.]table_name
+to {
+[before drop[rename to table] | [scn | timestamp] expr [enable | disable] triggers]
+}
+
+sql> set time on 
+sql> delete from dept2 where deptno=39;
+sql>commit;
+sql>alter table dept2 enable row movement;
+sql>flashback table dept2 to timestamp to_timestamp('2012-01-09 16:33:22','yyyy-mm-dd hh24:mi:ss');
+
+97.闪回丢弃
+sql>drop table dept_copy;
+sql>select object_name,original_name from user_recyclebin;
+sql>flashback table dept_copy to before drop;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
